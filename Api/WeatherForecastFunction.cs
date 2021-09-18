@@ -44,7 +44,8 @@ namespace BlazorApp.Api
             {
                 Date = DateTime.Now.AddDays(index),
                 TemperatureC = temp = randomNumber.Next(-20, 55),
-                Summary = GetSummary(temp)
+                Summary = GetSummary(temp),
+                Id = randomNumber.Next(0, 200)
             }).ToArray();
 
             return new OkObjectResult(result);

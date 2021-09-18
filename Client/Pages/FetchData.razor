@@ -1,6 +1,7 @@
 @page "/fetchdata"
-@using BlazorApp.Shared 
+@using BlazorApp.Shared
 @inject HttpClient Http
+@inject IJSRuntime IJSRuntime
 
 <h1>Weather forecast</h1>
 
@@ -12,23 +13,46 @@
 }
 else
 {
+    <div class="form-group">
+        <label for="exampleFormControlInput1">Date</label>
+        <input @bind="Date" type="date" class="form-control" placeholder="name@example.com" />
+    </div>
+    <div class="form-group">
+        <label>Temp C</label>
+        <input @bind="TempC" type="number" class="form-control" placeholder="123" />
+    </div>
+    <div class="form-group">
+        <label for="exampleFormControlInput1">Summary</label>
+        <input @bind="Summary" type="text" class="form-control" placeholder="Some text" />
+    </div>
+
+    <div class="form-group">
+        <button class="btn btn-success" @onclick="Add">Add</button>
+    </div>
+
+    <hr />
+
     <table class="table">
         <thead>
             <tr>
+                <th>Id</th>
                 <th>Date</th>
                 <th>Temp. (C)</th>
                 <th>Temp. (F)</th>
                 <th>Summary</th>
+                <th>Delete</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var forecast in forecasts)
             {
                 <tr>
+                    <td>@forecast.Id</td>
                     <td>@forecast.Date.ToShortDateString()</td>
                     <td>@forecast.TemperatureC</td>
                     <td>@forecast.TemperatureF</td>
                     <td>@forecast.Summary</td>
+                    <td><button @onclick="() => Delete(forecast.Id)" class="btn btn-danger">Delete</button></td>
                 </tr>
             }
         </tbody>
@@ -36,17 +60,49 @@ else
 }
 
 @code {
-    private WeatherForecast[] forecasts;
+
+    public DateTime Date { get; set; } = DateTime.Now;
+    public int TempC { get; set; }
+    public string Summary { get; set; }
+
+    private List<WeatherForecast> forecasts;
 
     protected override async Task OnInitializedAsync()
     {
-      try
-      {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("/api/WeatherForecast");
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine(ex.ToString());
-      }
+        try
+        {
+            forecasts = await Http.GetFromJsonAsync<List<WeatherForecast>>("/api/WeatherForecast");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    public void Delete(int id)
+    {
+        var forecast = forecasts.Single(x => x.Id == id);
+        forecasts.Remove(forecast);
+    }
+
+    public async Task Add()
+    {
+        if (string.IsNullOrEmpty(Summary))
+        {
+            await IJSRuntime.InvokeVoidAsync("showAlert", "It's empty!!");
+        }
+        else
+        {
+            var newWeatherForecast = new WeatherForecast()
+            {
+                Date = Date,
+                Summary = Summary,
+                TemperatureC = TempC,
+                Id = new Random().Next(0, 200)
+            };
+
+            forecasts.Add(newWeatherForecast);
+            Summary = string.Empty;
+        }
     }
 }
